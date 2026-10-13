@@ -4,8 +4,6 @@ const Header = (props) => {
   return <h1>{props.course}</h1>
 }
 
-// 1. Here, props.part is the "box" we passed in.
-// We use .name and .exercises to pull things out of the box.
 const Part = (props) => {
   return (
     <p>
@@ -17,10 +15,10 @@ const Part = (props) => {
 const Content = (props) => {
   return (
     <div>
-      {/* 2. We pass the whole box (part1) instead of separate variables */}
-      <Part part={props.part1} />
-      <Part part={props.part2} />
-      <Part part={props.part3} />
+      {/* Since parts is now an array, we access items by their index [0], [1], [2] */}
+      <Part part={props.parts[0]} />
+      <Part part={props.parts[1]} />
+      <Part part={props.parts[2]} />
     </div>
   )
 }
@@ -29,7 +27,7 @@ const Total = (props) => {
   return (
     <p>
       Number of exercises{' '}
-      {props.part1.exercises + props.part2.exercises + props.part3.exercises}
+      {props.parts[0].exercises + props.parts[1].exercises + props.parts[2].exercises}
     </p>
   )
 }
@@ -37,26 +35,28 @@ const Total = (props) => {
 const App = () => {
   const course = 'Half Stack application development'
 
-  // 3. Here are our boxes (objects) containing both name and exercises
-  const part1 = {
-    name: 'Fundamentals of React',
-    exercises: 10
-  }
-  const part2 = {
-    name: 'Using props to pass data',
-    exercises: 7
-  }
-  const part3 = {
-    name: 'State of a component',
-    exercises: 14
-  }
+  // Here we put our objects inside an array called 'parts'
+  const parts = [
+    {
+      name: 'Fundamentals of React',
+      exercises: 10
+    },
+    {
+      name: 'Using props to pass data',
+      exercises: 7
+    },
+    {
+      name: 'State of a component',
+      exercises: 14
+    }
+  ]
 
   return (
     <div>
       <Header course={course} />
-      {/* 4. We send the boxes into Content */}
-      <Content part1={part1} part2={part2} part3={part3} />
-      <Total part1={part1} part2={part2} part3={part3} />
+      {/* We pass the whole array into Content and Total */}
+      <Content parts={parts} />
+      <Total parts={parts} />
     </div>
   )
 }
