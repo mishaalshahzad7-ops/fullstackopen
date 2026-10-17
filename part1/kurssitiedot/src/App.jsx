@@ -1,14 +1,31 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import personService from './services/persons'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
+import Notification from './components/Notification'
 
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [searchFilter, setSearchFilter] = useState('')
+  const [notificationMessage, setNotificationMessage] = useState(null)
+  const [notificationType, setNotificationType] = useState('success')
+  const notificationTimer = useRef(null)
+
+  const showNotification = (message, type = 'success') => {
+    if (notificationTimer.current) {
+      clearTimeout(notificationTimer.current)
+    }
+
+    setNotificationMessage(message)
+    setNotificationType(type)
+    notificationTimer.current = setTimeout(() => {
+      setNotificationMessage(null)
+      notificationTimer.current = null
+    }, 5000)
+  }
 
   useEffect(() => {
     personService
@@ -17,9 +34,11 @@ const App = () => {
         setPersons(initialPersons)
       })
       .catch(() => {
-        alert('Could not load people from the server')
+        showNotification('Could not load people from the server', 'error')
       })
   }, [])
+
+  useEffect(() => () => clearTimeout(notificationTimer.current), [])
 
   const handleNameChange = (event) => setNewName(event.target.value)
   const handleNumberChange = (event) => setNewNumber(event.target.value)
@@ -56,9 +75,13 @@ const App = () => {
           )
           setNewName('')
           setNewNumber('')
+          showNotification(`Updated ${returnedPerson.name}'s number`)
         })
         .catch(() => {
-          alert(`Information of ${existingPerson.name} has already been removed from server`)
+          showNotification(
+            `Information of ${existingPerson.name} has already been removed from server`,
+            'error'
+          )
           setPersons(currentPersons =>
             currentPersons.filter(person => person.id !== existingPerson.id)
           )
@@ -72,9 +95,10 @@ const App = () => {
         setPersons(currentPersons => currentPersons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
+        showNotification(`Added ${returnedPerson.name}`)
       })
       .catch(() => {
-        alert('Could not add the person to the server')
+        showNotification(`Failed to add ${personObject.name}`, 'error')
       })
   }
 
@@ -87,9 +111,14 @@ const App = () => {
       .remove(id)
       .then(() => {
         setPersons(currentPersons => currentPersons.filter(person => person.id !== id))
+        showNotification(`Deleted ${name}`)
       })
       .catch(() => {
-        alert(`Could not delete ${name} from the server`)
+        showNotification(
+          `Information of ${name} has already been removed from server`,
+          'error'
+        )
+        setPersons(currentPersons => currentPersons.filter(person => person.id !== id))
       })
   }
 
@@ -102,6 +131,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notificationMessage} type={notificationType} />
       <Filter
         searchFilter={searchFilter}
         handleSearchChange={handleSearchChange}
