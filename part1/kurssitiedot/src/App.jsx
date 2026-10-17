@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import personService from './services/persons'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
@@ -10,12 +10,14 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [searchFilter, setSearchFilter] = useState('')
 
-  // Fetch initial data from json-server using useEffect
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
+    personService
+      .getAll()
+      .then(initialPersons => {
+        setPersons(initialPersons)
+      })
+      .catch(() => {
+        alert('Could not load people from the server')
       })
   }, [])
 
@@ -26,26 +28,68 @@ const App = () => {
   const addPerson = (event) => {
     event.preventDefault()
 
-    const nameExists = persons.some(
+    const existingPerson = persons.find(
       person => person.name.toLowerCase() === newName.trim().toLowerCase()
     )
-
-    if (nameExists) {
-      alert(`${newName.trim()} is already added to phonebook`)
-      return
-    }
 
     const personObject = {
       name: newName.trim(),
       number: newNumber.trim()
     }
 
-    axios
-      .post('http://localhost:3001/persons', personObject)
-      .then(response => {
-        setPersons(persons.concat(response.data))
+    if (existingPerson) {
+      const confirmUpdate = window.confirm(
+        `${existingPerson.name} is already added to phonebook, replace the old number with a new one?`
+      )
+
+      if (!confirmUpdate) {
+        return
+      }
+
+      personService
+        .update(existingPerson.id, personObject)
+        .then(returnedPerson => {
+          setPersons(currentPersons =>
+            currentPersons.map(person =>
+              person.id === existingPerson.id ? returnedPerson : person
+            )
+          )
+          setNewName('')
+          setNewNumber('')
+        })
+        .catch(() => {
+          alert(`Information of ${existingPerson.name} has already been removed from server`)
+          setPersons(currentPersons =>
+            currentPersons.filter(person => person.id !== existingPerson.id)
+          )
+        })
+      return
+    }
+
+    personService
+      .create(personObject)
+      .then(returnedPerson => {
+        setPersons(currentPersons => currentPersons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
+      })
+      .catch(() => {
+        alert('Could not add the person to the server')
+      })
+  }
+
+  const deletePerson = (id, name) => {
+    if (!window.confirm(`Delete ${name} ?`)) {
+      return
+    }
+
+    personService
+      .remove(id)
+      .then(() => {
+        setPersons(currentPersons => currentPersons.filter(person => person.id !== id))
+      })
+      .catch(() => {
+        alert(`Could not delete ${name} from the server`)
       })
   }
 
@@ -73,7 +117,7 @@ const App = () => {
       />
 
       <h3>Numbers</h3>
-      <Persons personsToShow={personsToShow} />
+      <Persons personsToShow={personsToShow} deletePerson={deletePerson} />
     </div>
   )
 }
