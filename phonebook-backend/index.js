@@ -1,9 +1,11 @@
 const express = require('express')
 const morgan = require('morgan')
+const cors = require('cors')
 
 const app = express()
 
 app.use(express.json())
+app.use(cors())
 
 // Define custom token to log HTTP POST request body data (Exercise 3.8)
 morgan.token('body', (req) => {
