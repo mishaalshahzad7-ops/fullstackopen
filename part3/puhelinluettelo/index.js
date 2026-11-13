@@ -19,6 +19,26 @@ app.get('/api/persons', (req, res) => {
   })
 })
 
+app.post('/api/persons', (request, response) => {
+  const body = request.body
+
+  if (!body.name) {
+    return response.status(400).json({ error: 'name missing' })
+  }
+  if (!body.number) {
+    return response.status(400).json({ error: 'number missing' })
+  }
+
+  const person = new Person({
+    name: body.name,
+    number: body.number,
+  })
+
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
+})
+
 const PORT = process.env.PORT || 3001
 
 app.listen(PORT, () => {
